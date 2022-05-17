@@ -1,6 +1,7 @@
 package de.whatsappuser.instanceapi.command;
 
 import de.whatsappuser.instanceapi.InstanceCore;
+import de.whatsappuser.instanceapi.configuration.ShopInventoryConfig;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -49,7 +50,9 @@ public class CreateShopCommand implements CommandExecutor, Listener {
                 this.shopcreate.remove(player.getUniqueId());
                 return;
             }
-
+            ShopInventoryConfig config = new ShopInventoryConfig(this.core.getPersist().load(ShopInventoryConfig.class).getId() + 1, 9, e.getMessage());
+            this.core.getPersist().save(config);
+            this.shopcreate.remove(player.getUniqueId());
         }
     }
 }
