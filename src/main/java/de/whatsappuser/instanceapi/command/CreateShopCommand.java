@@ -45,6 +45,7 @@ public class CreateShopCommand implements CommandExecutor, Listener {
     public void onAsync(AsyncPlayerChatEvent e) {
         Player player = e.getPlayer();
         if(this.shopcreate.contains(player.getUniqueId())) {
+            e.setCancelled(true);
             if (e.getMessage().contains("cancel")) {
                 player.sendMessage(this.core.getInstanceConfig().prefix + "§cDer Prozess wurde beendet.");
                 this.shopcreate.remove(player.getUniqueId());
@@ -53,6 +54,7 @@ public class CreateShopCommand implements CommandExecutor, Listener {
             ShopInventoryConfig config = new ShopInventoryConfig(this.core.getPersist().load(ShopInventoryConfig.class).getId() + 1, 9, e.getMessage());
             this.core.getPersist().save(config);
             this.shopcreate.remove(player.getUniqueId());
+            player.sendMessage(this.core.getInstanceConfig().prefix + "§aShop mit dem Name §e'" + e.getMessage() + "'#" + config.getId() + " §awurde erstellt.");
         }
     }
 }
