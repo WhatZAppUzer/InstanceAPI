@@ -1,7 +1,7 @@
 package de.whatsappuser.instanceapi.command;
 
 import de.whatsappuser.instanceapi.InstanceCore;
-import de.whatsappuser.instanceapi.configuration.ShopInventoryConfig;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,11 +17,12 @@ import java.util.UUID;
 public class CreateShopCommand implements CommandExecutor, Listener {
 
     private InstanceCore core;
-    private List<UUID> shopcreate;
+    private final List<UUID> shopcreate;
 
     public CreateShopCommand(InstanceCore core) {
         this.core = core;
         this.shopcreate = new ArrayList<>();
+        Bukkit.getPluginManager().registerEvents(this, core);
     }
 
     @Override
@@ -51,10 +52,20 @@ public class CreateShopCommand implements CommandExecutor, Listener {
                 this.shopcreate.remove(player.getUniqueId());
                 return;
             }
-            ShopInventoryConfig config = new ShopInventoryConfig(this.core.getPersist().load(ShopInventoryConfig.class).getId() + 1, 9, e.getMessage());
-            this.core.getPersist().save(config);
-            this.shopcreate.remove(player.getUniqueId());
-            player.sendMessage(this.core.getInstanceConfig().prefix + "§aShop mit dem Name §e'" + e.getMessage() + "'#" + config.getId() + " §awurde erstellt.");
+            for (de.whatsappuser.instanceapi.shop.inventory.ShopInventory shopInventory : this.core.getShopInventory().getShopInventories()) {
+                if(shopInventory.getInventoryName().equalsIgnoreCase(e.getMessage())) {
+                    player.sendMessage(this.core.getInstanceConfig().prefix + "§cDieser Name ist bereits vergeben");
+                    return;
+                }
+            }
+            for (int i = 0; i < this.core.getShopInventory().getShopInventories().size(); i++) {
+                de.whatsappuser.instanceapi.shop.inventory.ShopInventory shopInventory = new de.whatsappuser.instanceapi.shop.inventory.ShopInventory(this.core.getShopInventory().getShopInventories().size()+1, 9, e.getMessage());
+                this.core.getShopInventory().getShopInventories().add(shopInventory);
+                player.sendMessage(this.core.getInstanceConfig().prefix + "§aShop §7'§e" + e.getMessage() + "§7'#§e" + shopInventory.getInventoryId() + "§7' §awurde erstellt.");
+                this.shopcreate.remove(player.getUniqueId());
+                this.core.saveConfig();
+                return;
+            }
         }
     }
 }
