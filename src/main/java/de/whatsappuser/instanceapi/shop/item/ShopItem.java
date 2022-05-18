@@ -19,7 +19,7 @@ public class ShopItem {
     private String name, displayName;
     private List<String> description;
 
-    public ShopItem(String name, String displayName, int price, int inventorySlot, List<String> description) {
+    public ShopItem(Material material, short subId, int amount, String name, String displayName, int price, int inventorySlot, List<String> description) {
         this.name = name;
         this.displayName = displayName;
         this.price = price;
@@ -30,7 +30,7 @@ public class ShopItem {
     public ItemStack getItem() {
         ItemStack itemStack = new ItemStack(this.material, this.amount, this.subId);
         ItemMeta meta = itemStack.getItemMeta();
-        meta.setDisplayName(this.displayName);
+        meta.setDisplayName(this.displayName + " §e" + this.price + "$");
         meta.setLore(this.description);
         itemStack.setItemMeta(meta);
         return itemStack;
