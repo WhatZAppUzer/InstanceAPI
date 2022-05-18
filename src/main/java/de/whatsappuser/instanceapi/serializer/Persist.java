@@ -12,19 +12,17 @@ import java.lang.reflect.Type;
 public class Persist {
 
     private final Gson gson = buildGson().create();
-    private final InstanceCore instance;
+    private final InstanceCore plugin;
 
-    public Persist(InstanceCore instance) {
-        this.instance = instance;
+    public Persist(InstanceCore plugin) {
+        this.plugin = plugin;
     }
 
     public static String getName(Object o) {
-        return getName(o.getClass());
+        return o.getClass().getSimpleName();
     }
 
-    public static String getName(Type type) {
-        return getName(type.getClass());
-    }
+    public static String getName(Type type) { return type.getClass().getSimpleName(); }
 
     private GsonBuilder buildGson() {
         return new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().enableComplexMapKeySerialization()
@@ -33,7 +31,7 @@ public class Persist {
     }
 
     public File getFile(String name) {
-        return new File(this.instance.getDataFolder(), name + ".json");
+        return new File(this.plugin.getDataFolder(), name + ".json");
     }
 
     public File getFile(Class<?> clazz) {
@@ -58,7 +56,7 @@ public class Persist {
 
     public <T> T loadOrSaveDefault(T def, Class<T> clazz, File file) {
         if (!file.exists()) {
-            this.instance.getLogger().info("Creating default: " + file);
+            this.plugin.getLogger().info("Creating default: " + file);
             this.save(def, file);
             return def;
         }
@@ -66,14 +64,14 @@ public class Persist {
         T loaded = this.load(clazz, file);
 
         if (loaded == null) {
-            this.instance.getLogger().warning("Using default as I failed to load: " + file);
+            this.plugin.getLogger().warning("Using default as I failed to load: " + file);
 
             // backup bad file, so user can attempt to recover their changes from it
             File backup = new File(file.getPath() + "_bad");
             if (backup.exists()) {
                 backup.delete();
             }
-            this.instance.getLogger().warning("Backing up copy of bad file to: " + backup);
+            this.plugin.getLogger().warning("Backing up copy of bad file to: " + backup);
             file.renameTo(backup);
 
             return def;
@@ -110,8 +108,8 @@ public class Persist {
 
         try {
             return gson.fromJson(content, clazz);
-        } catch (Exception ex) {    // output the error message rather than full stack trace; error parsing the file, most likely
-            this.instance.getLogger().warning(ex.getMessage());
+        } catch (Exception ex) {
+            this.plugin.getLogger().warning(ex.getMessage());
         }
 
         return null;
@@ -131,8 +129,8 @@ public class Persist {
 
         try {
             return (T) gson.fromJson(content, typeOfT);
-        } catch (Exception ex) {    // output the error message rather than full stack trace; error parsing the file, most likely
-            this.instance.getLogger().warning(ex.getMessage());
+        } catch (Exception ex) {
+            this.plugin.getLogger().warning(ex.getMessage());
         }
 
         return null;

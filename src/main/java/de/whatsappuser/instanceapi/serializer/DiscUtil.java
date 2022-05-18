@@ -22,9 +22,9 @@ public class DiscUtil {
         byte[] output = new byte[length];
         InputStream in = new FileInputStream(file);
         int offset = 0;
-        while (offset < length)
+        while (offset < length) {
             offset += in.read(output, offset, (length - offset));
-
+        }
         in.close();
 
         return output;
