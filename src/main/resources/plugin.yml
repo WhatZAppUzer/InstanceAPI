@@ -1,0 +1,11 @@
+name: InstanceAPI
+version: a1.0
+api-version: 1.8.8
+main: de.whatsappuser.instanceapi.InstanceCore
+author: WhatsAppUser
+description: this is a test plugin
+commands:
+  createShop:
+    permission: instancecore.createshop
+  showinv:
+    permission: instancecore.showinventory
