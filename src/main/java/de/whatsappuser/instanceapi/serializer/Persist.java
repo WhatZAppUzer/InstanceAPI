@@ -3,7 +3,9 @@ package de.whatsappuser.instanceapi.serializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.whatsappuser.instanceapi.InstanceCore;
-import de.whatsappuser.instanceapi.serializer.typeadapter.EnumTypeAdapter;
+import de.whatsappuser.instanceapi.serializer.typeadatapter.EnumTypeAdapter;
+import de.whatsappuser.instanceapi.serializer.typeadatapter.InventoryTypeAdapter;
+import org.bukkit.inventory.Inventory;
 
 import java.io.File;
 import java.lang.reflect.Modifier;
@@ -12,71 +14,72 @@ import java.lang.reflect.Type;
 public class Persist {
 
     private final Gson gson = buildGson().create();
-    private final InstanceCore plugin;
 
-    public Persist(InstanceCore plugin) {
-        this.plugin = plugin;
+    public static String getName(Class<?> clazz) {
+        return clazz.getSimpleName().toLowerCase();
     }
 
     public static String getName(Object o) {
-        return o.getClass().getSimpleName();
+        return getName(o.getClass());
     }
 
-    public static String getName(Type type) { return type.getClass().getSimpleName(); }
+    public static String getName(Type type) {
+        return getName(type.getClass());
+    }
 
     private GsonBuilder buildGson() {
-        return new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().enableComplexMapKeySerialization()
+        return new GsonBuilder().setPrettyPrinting().disableHtmlEscaping()
+                .enableComplexMapKeySerialization()
                 .excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.VOLATILE)
+                .registerTypeAdapter(Inventory.class, new InventoryTypeAdapter())
+                //TODO register LocationTypeAdapter
                 .registerTypeAdapterFactory(EnumTypeAdapter.ENUM_FACTORY);
+
     }
 
     public File getFile(String name) {
-        return new File(this.plugin.getDataFolder(), name + ".json");
+        return new File(InstanceCore.getInstance().getDataFolder(), name + ".json");
     }
 
     public File getFile(Class<?> clazz) {
         return getFile(getName(clazz));
     }
 
-    public File getFile(Object obj) {
-        return getFile(getName(obj));
+    public File getFile(Object object) {
+        return getFile(getName(object));
     }
 
     public File getFile(Type type) {
         return getFile(getName(type));
     }
 
-    public <T> T loadOrSaveDefault(T def, Class<T> clazz) {
-        return loadOrSaveDefault(def, clazz, getFile(clazz));
+    public <T> T loadOrSaveDefault(T def, Class<T> tClass) {
+        return loadOrSaveDefault(def, tClass, getFile(tClass));
     }
 
-    public <T> T loadOrSaveDefault(T def, Class<T> clazz, String name) {
-        return loadOrSaveDefault(def, clazz, getFile(name));
+    public <T> T loadOrSaveDefault(T def, Class<T> tClass, String name) {
+        return loadOrSaveDefault(def, tClass, getFile(name));
     }
 
-    public <T> T loadOrSaveDefault(T def, Class<T> clazz, File file) {
-        if (!file.exists()) {
-            this.plugin.getLogger().info("Creating default: " + file);
+    public <T> T loadOrSaveDefault(T def, Class<T> tClass, File file) {
+        if(!file.exists()) {
+            InstanceCore.getInstance().getLogger().info("Creating default: " + file);
             this.save(def, file);
             return def;
         }
 
-        T loaded = this.load(clazz, file);
+        T loaded = this.load(tClass, file);
 
-        if (loaded == null) {
-            this.plugin.getLogger().warning("Using default as I failed to load: " + file);
+        if(loaded == null) {
+            InstanceCore.getInstance().getLogger().warning("Using default as I failed to load: " + file);
 
-            // backup bad file, so user can attempt to recover their changes from it
-            File backup = new File(file.getPath() + "_bad");
-            if (backup.exists()) {
-                backup.delete();
-            }
-            this.plugin.getLogger().warning("Backing up copy of bad file to: " + backup);
-            file.renameTo(backup);
+            File backUp = new File(file.getPath() + "_bad");
+            if(backUp.exists())
+                backUp.delete();
 
-            return def;
+            InstanceCore.getInstance().getLogger().warning("Backing up copy of bad file to: " + backUp);
+            file.renameTo(backUp);
         }
-
         return loaded;
     }
 
@@ -89,50 +92,48 @@ public class Persist {
     }
 
     public boolean save(Object instance, File file) {
-        return DiscUtil.writeCatch(file, gson.toJson(instance), true);
+        return DiscUtil.writeCatch(file, this.gson.toJson(instance), true);
     }
 
-    public <T> T load(Class<T> clazz) {
-        return load(clazz, getFile(clazz));
+    public <T> T load(Class<T> tClass) {
+        return load(tClass, getFile(tClass));
     }
 
-    public <T> T load(Class<T> clazz, String name) {
-        return load(clazz, getFile(name));
+    public <T> T load(Class<T> tClass, String name) {
+        return load(tClass, getFile(name));
     }
 
-    public <T> T load(Class<T> clazz, File file) {
+    public <T> T load(Class<T> tClass, File file) {
         String content = DiscUtil.readCatch(file);
-        if (content == null) {
+
+        if(content == null)
             return null;
-        }
 
         try {
-            return gson.fromJson(content, clazz);
-        } catch (Exception ex) {
-            this.plugin.getLogger().warning(ex.getMessage());
+            return (T) this.gson.fromJson(content, tClass);
+        } catch (Exception e) {
+            InstanceCore.getInstance().getLogger().warning(e.getMessage());
         }
-
         return null;
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T load(Type typeOfT, String name) {
-        return (T) load(typeOfT, getFile(name));
+    public <T> T load(Type typeOft, String name) {
+        return (T) load(typeOft, getFile(name));
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T load(Type typeOfT, File file) {
+    public <T> T load(Type typeOft, File file) {
         String content = DiscUtil.readCatch(file);
-        if (content == null) {
+
+        if(content == null)
             return null;
-        }
 
         try {
-            return (T) gson.fromJson(content, typeOfT);
-        } catch (Exception ex) {
-            this.plugin.getLogger().warning(ex.getMessage());
+            return (T) this.gson.fromJson(content, typeOft);
+        } catch (Exception e) {
+            InstanceCore.getInstance().getLogger().warning(e.getMessage());
         }
-
         return null;
     }
 }

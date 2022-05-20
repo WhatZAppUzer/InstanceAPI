@@ -63,24 +63,24 @@ public class DiscUtil {
                 file.createNewFile();
                 Files.write(content.getBytes(), file);
             } catch (IOException e) {
-                e.printStackTrace();
+                InstanceCore.getInstance().sendErrorMessage(e);
             } finally {
                 lock.unlock();
             }
         } else {
-            Bukkit.getScheduler().runTaskAsynchronously(InstanceCore.getPlugin(InstanceCore.class), () -> {
+            Bukkit.getScheduler().runTaskAsynchronously(InstanceCore.getInstance(), () -> {
                 lock.lock();
                 try {
                     write(file, content);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    InstanceCore.getInstance().sendErrorMessage(e);
                 } finally {
                     lock.unlock();
                 }
             });
         }
 
-        return true;
+        return true; // don't really care but for some reason this is a boolean.
     }
 
     public static String readCatch(File file) {
@@ -98,4 +98,5 @@ public class DiscUtil {
     public static String utf8(byte[] bytes) {
         return new String(bytes, StandardCharsets.UTF_8);
     }
+
 }
