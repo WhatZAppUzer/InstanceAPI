@@ -1,63 +1,82 @@
 package de.whatsappuser.instanceapi;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.LongSerializationPolicy;
-import de.whatsappuser.instanceapi.command.CreateShopCommand;
-import de.whatsappuser.instanceapi.command.ShowInventoryCommand;
-import de.whatsappuser.instanceapi.configuration.Config;
-import de.whatsappuser.instanceapi.configuration.ShopInventory;
+import de.whatsappuser.instanceapi.config.Config;
+import de.whatsappuser.instanceapi.config.Messages;
 import de.whatsappuser.instanceapi.serializer.Persist;
-import de.whatsappuser.instanceapi.shop.ShopManager;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 @Getter
 public class InstanceCore extends JavaPlugin {
 
-    private ShopManager shopManager;
     private static InstanceCore instance;
-
-    private Gson gson;
 
     private Persist persist;
 
-    private Config instanceConfig;
-    private ShopInventory shopInventory;
+    private Config coreConfig;
+    private Messages messages;
 
     @Override
     public void onLoad() {
         instance = this;
-        this.gson = new GsonBuilder().setPrettyPrinting().serializeNulls().setLongSerializationPolicy(LongSerializationPolicy.STRING).create();
-        this.shopManager = new ShopManager();
-        if(!getDataFolder().exists()) getDataFolder().mkdir();
     }
 
     @Override
     public void onEnable() {
-        this.persist = new Persist(this);
+        if (getDataFolder().exists())
+            return;
+        getDataFolder().mkdir();
+        this.persist = new Persist();
         loadConfig();
         saveConfig();
-        getCommand("createShop").setExecutor(new CreateShopCommand(this));
-        getCommand("showinv").setExecutor(new ShowInventoryCommand(this));
     }
 
     @Override
     public void onDisable() {
-
+        saveConfig();
+        instance = null;
+        this.persist = null;
     }
 
+    //<editor-fold desc="loadConfig">
+    public void loadConfig() {
+        this.coreConfig = this.persist.getFile(Config.class).exists() ? this.persist.load(Config.class) : new Config();
+        this.messages = this.persist.getFile(Messages.class).exists() ? this.persist.load(Messages.class) : new Messages();
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="saveConfig">
+    public void saveConfig() {
+        if (this.coreConfig != null) this.persist.save(this.coreConfig);
+        if (this.messages != null) this.persist.save(this.messages);
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="reloadConfig">
+    public void reloadConfig() {
+        this.saveConfig();
+        this.loadConfig();
+        getLogger().info("Core Config was reloaded.");
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="getInstance">
     public static InstanceCore getInstance() {
         return instance;
     }
+    //</editor-fold>
 
-    public void loadConfig() {
-        this.instanceConfig = this.persist.getFile(Config.class).exists() ? this.persist.load(Config.class) : new Config();
-        this.shopInventory = this.persist.getFile(ShopInventory.class).exists() ? this.persist.load(ShopInventory.class) : new ShopInventory(new de.whatsappuser.instanceapi.shop.inventory.ShopInventory(0, 27, "ExampleInventory"));
+    //<editor-fold desc="sendErrorMessage">
+    public void sendErrorMessage(Exception e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw, true);
+        e.printStackTrace(pw);
+        getLogger().info(sw.getBuffer().toString());
+        if (this.coreConfig != null || this.coreConfig.sendErrorReports)
+            getLogger().info("Sending Error Report...");
     }
-
-    public void saveConfig() {
-        if(this.instanceConfig != null) this.persist.save(this.instanceConfig);
-        if(this.shopInventory != null) this.persist.save(this.shopInventory);
-    }
+    //</editor-fold>
 }
