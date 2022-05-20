@@ -5,5 +5,4 @@ main: de.whatsappuser.instanceapi.InstanceCore
 author: WhatsAppUser
 description: this is a test plugin
 commands:
-  backpack:
-    permission: Framework.backpack
+  framework:
