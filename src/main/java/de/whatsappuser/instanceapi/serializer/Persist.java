@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import de.whatsappuser.instanceapi.InstanceCore;
 import de.whatsappuser.instanceapi.serializer.typeadatapter.EnumTypeAdapter;
 import de.whatsappuser.instanceapi.serializer.typeadatapter.InventoryTypeAdapter;
+import lombok.Getter;
 import org.bukkit.inventory.Inventory;
 
 import java.io.File;
@@ -13,6 +14,7 @@ import java.lang.reflect.Type;
 
 public class Persist {
 
+    @Getter
     private final Gson gson = buildGson().create();
 
     public static String getName(Class<?> clazz) {
